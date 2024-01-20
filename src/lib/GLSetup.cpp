@@ -48,7 +48,8 @@ GLFWwindow* setupGLFW(string windowTitle, int major, int minor, int windowWidth,
 }
 
 // Cleanup GLFW
-void cleanupGLFW(GLFWwindow* window) {
+void cleanupGLFW(GLFWwindow* window) 
+{
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
