@@ -3,7 +3,7 @@
 #include <sstream>
 #include <thread>
 #include <vector>
-#include <GL/glew.h>					
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "glm/glm.hpp"
 #include "MeshData.hpp"
@@ -38,10 +38,10 @@ void createSimpleQuad(Mesh &m) {
 
 	// Add to mesh's list of vertices
 	m.vertices.push_back(upperLeft);
-	m.vertices.push_back(upperRight);	
+	m.vertices.push_back(upperRight);
 	m.vertices.push_back(lowerLeft);
 	m.vertices.push_back(lowerRight);
-	
+
 	// Add indices for two triangles
 	m.indices.push_back(0);
 	m.indices.push_back(3);
@@ -52,15 +52,15 @@ void createSimpleQuad(Mesh &m) {
 	m.indices.push_back(3);
 }
 
-// Main 
+// Main
 int main(int argc, char **argv) {
-	
+
 	// Are we in debugging mode?
 	bool DEBUG_MODE = true;
 
 	// GLFW setup
 	// Switch to 4.1 if necessary for macOS
-	GLFWwindow* window = setupGLFW("Assign01: kamase", 4, 3, 800, 800, DEBUG_MODE);
+	GLFWwindow* window = setupGLFW("Assign01: kamase", 4, 1, 800, 800, DEBUG_MODE);
 
 	// GLEW setup
 	setupGLEW(window);
@@ -72,11 +72,11 @@ int main(int argc, char **argv) {
 	if(DEBUG_MODE) checkAndSetupOpenGLDebugging();
 
 	// Set the background color to a shade of purple
-	glClearColor(0.5f, 0.0f, 0.7f, 1.0f);	
+	glClearColor(0.5f, 0.0f, 0.7f, 1.0f);
 
 	// Create and load shaders
 	GLuint programID = 0;
-	try {		
+	try {
 		// Load vertex shader code and fragment shader code
 		string vertexCode = readFileToString("./shaders/Assign01/Basic.vs");
 		string fragCode = readFileToString("./shaders/Assign01/Basic.fs");
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 		// Create shader program from code
 		programID = initShaderProgramFromSource(vertexCode, fragCode);
 	}
-	catch (exception e) {		
+	catch (exception e) {
 		// Close program
 		cleanupGLFW(window);
 		exit(EXIT_FAILURE);
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 	// Create OpenGL mesh (VAO) from data
 	MeshGL mgl;
 	createMeshGL(m, mgl);
-	
+
 	// Enable depth testing
 	glEnable(GL_DEPTH_TEST);
 
@@ -117,9 +117,9 @@ int main(int argc, char **argv) {
 		glUseProgram(programID);
 
 		// Draw object
-		drawMesh(mgl);	
+		drawMesh(mgl);
 
-		// Swap buffers and poll for window events		
+		// Swap buffers and poll for window events
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
 	// Clean up shader programs
 	glUseProgram(0);
 	glDeleteProgram(programID);
-		
+
 	// Destroy window and stop GLFW
 	cleanupGLFW(window);
 
