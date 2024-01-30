@@ -1,11 +1,16 @@
 #include <iostream>
 #include <cstring>
 #include <thread>
+#include <vector>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include "Shader.hpp"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#define GLM_ENABLE_EXPERMENTIAL
+#include "glm/gtx/string_cast.hpp"
 
 using namespace std;
 
@@ -73,19 +78,65 @@ int main(int argc, char **argv){
 
     glDeleteShader(vertID);
     glDeleteShader(fragID);
+
+    vector<GLfloat> vertOnly = {
+        -0.3f, -0.3f, 0.0f,
+         0.3f, -0.3f, 0.0f,
+        -0.3f,  0.3f, 0.0f,
+         0.3f,  0.3f, 0.0f
+    };
+
+    vector<GLuint> indices = { 0, 1, 2, 1, 3, 2};
+
+    GLuint VBO = 0;
+    GLuint EBO = 0;
+    GLuint VAO = 0;
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertOnly.size()*sizeof(float),
+                 vertOnly.data(), GL_STATIC_DRAW);
     
-    glClearColor(0.3, 0.3, 0.0, 1.0);
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 3*sizeof(float), 0);
+
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(GLuint),
+                indices.data(), GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    glClearColor(0.3, 0.0, 0.3, 1.0);
     glEnable(GL_DEPTH_TEST);
 
     while(!glfwWindowShouldClose(window)){
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
         glViewport(0, 0, frameWidth, frameHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+       
         glUseProgram(progID);
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+        glUseProgram(0);
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
         this_thread::sleep_for(chrono::milliseconds(15));
     }
+
+    glBindVertexArray(0);
+    glDeleteVertexArrays(1, &VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glDeleteBuffers(1, &EBO);
+    glDeleteBuffers(1, &VBO);
 
     glUseProgram(0);
     glDeleteProgram(progID);
