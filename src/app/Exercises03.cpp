@@ -20,6 +20,31 @@ static void error_callback(int error, const char* desc){
 
 int main(int argc, char **argv){
     cout << "BEGIN OPENGL ADVENTURE" << endl;
+
+    glm::vec3 A(1,4,0);
+    glm::vec3 B(2,3,2);
+
+    cout << glm::to_string(A) << endl;
+    cout << glm::to_string(B) << endl;
+
+    glm::vec3 C = B - A;
+    cout << glm::to_string(C) << endl;
+
+    float lenA = glm::length(A);
+    cout << "Len(A): " << lenA << endl;
+
+    glm::vec3 nA = glm::normalize(A);
+    cout << "Normalized A: " << glm::to_string(nA) << endl;
+
+    glm::vec3 nB = glm::normalize(B);
+    cout << "Normalized A: " << glm::to_string(nB) << endl;
+
+    glm::vec3 E(7,8,0);
+    glm::vec3 AcE = glm::cross(A,E);
+    cout << "A cross E: " << glm::to_string(AcE) << endl;
+
+
+
     glfwSetErrorCallback(error_callback);
 
     if(!glfwInit()){
