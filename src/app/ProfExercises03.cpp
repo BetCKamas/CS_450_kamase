@@ -1,9 +1,14 @@
 #include <iostream>
 #include <cstring>
 #include <thread>
+#include <vector>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "Shader.hpp"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/string_cast.hpp"
 using namespace std;
 
 static void error_callback(int error, const char* desc) {
@@ -12,6 +17,12 @@ static void error_callback(int error, const char* desc) {
 
 int main(int argc, char **argv) {
     cout << "BEGIN OPENGL ADVENTURE!" << endl;
+
+    glm::vec3 A(1,2,3);
+    cout << "A: " << glm::to_string(A) << endl;
+
+
+
     glfwSetErrorCallback(error_callback);
     if(!glfwInit()) {
         cerr << "ERROR: GLFW FAILED!" << endl;
@@ -23,6 +34,8 @@ int main(int argc, char **argv) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
 
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+	
     int frameWidth = 800;
     int frameHeight = 600;
     GLFWwindow *window = glfwCreateWindow(frameWidth, frameHeight, 
@@ -71,6 +84,49 @@ int main(int argc, char **argv) {
     glDeleteShader(vertID);
     glDeleteShader(fragID);
 
+    vector<GLfloat> vertOnly = {
+        -0.3f, -0.3f, 0.0f,
+        0.3f, -0.3f, 0.0f,
+        -0.3f, 0.3f, 0.0f,
+        0.3f, 0.3f, 0.0f,
+    };
+
+    vector<GLuint> indices = { 0, 1, 2, 1, 3, 2 };
+    int indexCnt = (int)indices.size();
+
+    GLuint VBO = 0;
+    GLuint EBO = 0;
+    GLuint VAO = 0;
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertOnly.size()*sizeof(float), 
+                        vertOnly.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 3*sizeof(float), 0);
+
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(GLuint),
+                    indices.data(), GL_STATIC_DRAW);
+    
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    cout << "VAO: " << VAO << endl;
+    cout << "VBO: " << VBO << endl;
+    cout << "EBO: " << EBO << endl;
+    cout << "progID: " << progID << endl;
+
+
 
 
     glClearColor(1.0, 1.0, 0.0, 1.0);
@@ -81,12 +137,23 @@ int main(int argc, char **argv) {
         glViewport(0,0,frameWidth,frameHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(progID);
-
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, indexCnt, 
+                        GL_UNSIGNED_INT, (void*)0);
+        glBindVertexArray(0);
+        glUseProgram(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
         this_thread::sleep_for(chrono::milliseconds(15));
     }
+
+    glBindVertexArray(0);
+    glDeleteVertexArrays(1, &VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glDeleteBuffers(1, &EBO);
+    glDeleteBuffers(1, &VBO);
 
     glUseProgram(0);
     glDeleteProgram(progID);
