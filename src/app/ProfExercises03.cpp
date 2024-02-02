@@ -18,8 +18,28 @@ static void error_callback(int error, const char* desc) {
 int main(int argc, char **argv) {
     cout << "BEGIN OPENGL ADVENTURE!" << endl;
 
-    glm::vec3 A(1,2,3);
+    glm::vec3 A(1,4,0);
+    glm::vec3 B = glm::vec3(2,3,2);
     cout << "A: " << glm::to_string(A) << endl;
+    cout << "B: " << glm::to_string(B) << endl;
+
+    cout << "A.x: " << A.x << endl;
+
+    glm::vec3 C = B - A;
+    cout << "C: " << glm::to_string(C) << endl;
+
+    float lenA = glm::length(A);
+    cout << "Len(A): " << lenA << endl;
+    glm::vec3 nA = glm::normalize(A);
+    cout << "Normalized A: " << glm::to_string(nA) << endl;
+
+    glm::vec3 E(7,8,0);
+    glm::vec3 AcE = glm::cross(A, E);
+    cout << "(A x E): " << glm::to_string(AcE) << endl;
+    
+
+
+
 
 
 
