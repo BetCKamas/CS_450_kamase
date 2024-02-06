@@ -52,6 +52,58 @@ void createSimpleQuad(Mesh &m) {
 	m.indices.push_back(3);
 }
 
+
+// Create very simple mesh: a quad (4 vertices, 6 indices, 2 triangles)
+void createSimplePentagon(Mesh &m) {
+	// Clear out vertices and elements
+	m.vertices.clear();
+	m.indices.clear();
+
+	// Create four corners
+	Vertex upperLeft, upperRight;
+	Vertex lowerLeft, lowerRight;
+
+	// Create topMiddle point
+	Vertex topMiddle;
+
+	// Set positions of vertices
+	// Note: glm::vec3(x, y, z)
+	upperLeft.position = glm::vec3(-0.5, 0.5, 0.0);
+	topMiddle.position = glm::vec3(0.0, 0.75, 0.0);
+	upperRight.position = glm::vec3(0.5, 0.5, 0.0);
+	lowerLeft.position = glm::vec3(-0.5, -0.5, 0.0);
+	lowerRight.position = glm::vec3(0.5, -0.5, 0.0);
+
+	// Set vertex colors (red, black, green, blue, white)
+	// Note: glm::vec4(red, green, blue, alpha)
+	upperLeft.color = glm::vec4(1.0, 0.0, 0.0, 1.0);
+	topMiddle.color = glm::vec4(0.0, 0.0, 0.0 , 1.0);
+	upperRight.color = glm::vec4(0.0, 1.0, 0.0, 1.0);
+	lowerLeft.color = glm::vec4(0.0, 0.0, 1.0, 1.0);
+	lowerRight.color = glm::vec4(1.0, 1.0, 1.0, 1.0);
+
+	// Add to mesh's list of vertices
+	m.vertices.push_back(upperLeft); 	// 0
+	m.vertices.push_back(topMiddle);	// 1
+	m.vertices.push_back(upperRight); 	// 2
+	m.vertices.push_back(lowerLeft); 	// 3
+	m.vertices.push_back(lowerRight);	// 4
+
+	// Add indices for three triangles
+	m.indices.push_back(0);
+	m.indices.push_back(4);
+	m.indices.push_back(2);
+
+	m.indices.push_back(0);
+	m.indices.push_back(3);
+	m.indices.push_back(4);
+
+	m.indices.push_back(0);
+	m.indices.push_back(2);
+	m.indices.push_back(1);
+}
+
+
 // Main
 int main(int argc, char **argv) {
 
@@ -95,7 +147,8 @@ int main(int argc, char **argv) {
 
 	// Create simple quad
 	Mesh m;
-	createSimpleQuad(m);
+	// createSimpleQuad(m);
+	createSimplePentagon(m);
 
 	// Create OpenGL mesh (VAO) from data
 	MeshGL mgl;
