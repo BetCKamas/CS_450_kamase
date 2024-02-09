@@ -7,8 +7,8 @@ uniform mat4 modelMat;
 
 void main() {
     vec4 pos = vec4(position, 1.0);
-    pos = modelMat * pos;
-    
+    pos = modelMat*pos;
+
     gl_Position = pos;
 }
 
