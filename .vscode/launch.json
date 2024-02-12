@@ -13,6 +13,7 @@
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "integratedTerminal", //externalTerminal"
+            
         },
         {
             "name": "(Linux) Launch",
