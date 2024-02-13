@@ -15,6 +15,8 @@ using namespace std;
 
 glm::mat4 modelMat(1.0);
 string transformString = "v";
+glm::mat4 viewMat(1.0);
+glm::mat4 projMat(1.0);
 
 void printRM(string name, glm::mat3 &m) {
     cout << name << ": " << endl;
@@ -189,7 +191,11 @@ int main(int argc, char **argv) {
     glDeleteShader(fragID);
 
     GLint modelMatLoc = glGetUniformLocation(progID, "modelMat");
+    GLint viewMatLoc = glGetUniformLocation(progID, "viewMat");
+    GLint projMatLoc = glGetUniformLocation(progID, "projMat");
     cout << "modelMatLoc: " << modelMatLoc << endl;
+    cout << "viewMatLoc: " << viewMatLoc << endl;
+    cout << "projMatLoc: " << projMatLoc << endl;
 
     vector<GLfloat> vertOnly = {
         -0.3f, -0.3f, 0.0f,
@@ -241,11 +247,23 @@ int main(int argc, char **argv) {
 
     while(!glfwWindowShouldClose(window)) {
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
+        float aspect = 1.0f;
+        if(frameHeight > 0) {
+            aspect = ((float)frameWidth) / ((float)frameHeight);
+        }
+        float fov = glm::radians(90.0f);
+
         glViewport(0,0,frameWidth,frameHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(progID);
 
         glUniformMatrix4fv(modelMatLoc, 1, false, glm::value_ptr(modelMat));
+
+        viewMat = glm::lookAt(glm::vec3(1,0,1), glm::vec3(0,0,0), glm::vec3(0,1,0));
+        glUniformMatrix4fv(viewMatLoc, 1, false, glm::value_ptr(viewMat));
+
+        projMat = glm::perspective(fov, aspect, 0.1f, 1000.0f);
+        glUniformMatrix4fv(projMatLoc, 1, false, glm::value_ptr(projMat));
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, indexCnt, 
