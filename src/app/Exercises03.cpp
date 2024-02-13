@@ -18,6 +18,8 @@ using namespace std;
 
 glm::mat4 modelMat(1.0);
 string transformString = "v";
+glm::mat4 viewMat(1.0);
+glm::mat4 projMat(1.0);
 
 void printRM(string name, glm::mat3 &m){
     cout << name << ": " << endl;
@@ -43,44 +45,44 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
     if(action == GLFW_PRESS || action == GLFW_REPEAT){
         if(key == GLFW_KEY_ESCAPE){
             glfwSetWindowShouldClose(window, true);
+        } else if (key == GLFW_KEY_Q){
+            modelMat = glm::rotate(glm::radians(5.0f), glm::vec3(0,0,1))*modelMat;
+            transformString = "R(+5)*" + transformString;
+        } else if (key == GLFW_KEY_E){
+            modelMat = glm::rotate(glm::radians(-5.0f), glm::vec3(0,0,1))*modelMat;
+            transformString = "R(-5)*" + transformString;
+        } else if (key == GLFW_KEY_SPACE){
+            modelMat = glm::mat4(1.0);
+            transformString = "v";
+        } else if (key == GLFW_KEY_F){
+            modelMat = glm::scale(glm::vec3(0.8,1,1))*modelMat;
+            transformString = "Sx(0.8)*" + transformString;
+        } else if (key == GLFW_KEY_G){
+            modelMat = glm::scale(glm::vec3(1.25,1,1))*modelMat;
+            transformString = "Sx(1.25)*" + transformString;
+        } else if (key == GLFW_KEY_R){
+            modelMat = glm::scale(glm::vec3(1,0.8,1))*modelMat;
+            transformString = "Sy(0.8)*" + transformString;
+        } else if (key == GLFW_KEY_T){
+            modelMat = glm::scale(glm::vec3(1,1.25,1))*modelMat;
+            transformString = "Sy(1.25)*" + transformString;
+        } else if (key == GLFW_KEY_W){
+            modelMat = glm::translate(glm::vec3(0,0.1,0))*modelMat;
+            transformString = "Ty(+0.1)*" + transformString;
+        } else if (key == GLFW_KEY_S){
+            modelMat = glm::translate(glm::vec3(0,-0.1,0))*modelMat;
+            transformString = "Ty(-0.1)*" + transformString;
+        } else if (key == GLFW_KEY_A){
+            modelMat = glm::translate(glm::vec3(-0.1,0,0))*modelMat;
+            transformString = "Tx(-0.1)*" + transformString;
+        } else if (key == GLFW_KEY_D){
+            modelMat = glm::translate(glm::vec3(0.1,0,0))*modelMat;
+            transformString = "Tx(+0.1)*" + transformString;
         }
-    } else if (key == GLFW_KEY_Q){
-        modelMat = glm::rotate(glm::radians(5.0f), glm::vec3(0,0,1))*modelMat;
-        transformString = "R(+5)*" + transformString;
-    } else if (key == GLFW_KEY_E){
-        modelMat = glm::rotate(glm::radians(-5.0f), glm::vec3(0,0,1))*modelMat;
-        transformString = "R(-5)*" + transformString;
-    } else if (key == GLFW_KEY_SPACE){
-        modelMat = glm::mat4(1.0);
-        transformString = "v";
-    } else if (key == GLFW_KEY_F){
-        modelMat = glm::scale(glm::vec3(0.8,1,1))*modelMat;
-        transformString = "Sx(0.8)*" + transformString;
-    } else if (key == GLFW_KEY_G){
-        modelMat = glm::scale(glm::vec3(1.25,1,1))*modelMat;
-        transformString = "Sx(1.25)*" + transformString;
-    } else if (key == GLFW_KEY_R){
-        modelMat = glm::scale(glm::vec3(1,0.8,1))*modelMat;
-        transformString = "Sy(0.8)*" + transformString;
-    } else if (key == GLFW_KEY_T){
-        modelMat = glm::scale(glm::vec3(1,1.25,1))*modelMat;
-        transformString = "Sy(1.25)*" + transformString;
-    } else if (key == GLFW_KEY_W){
-        modelMat = glm::translate(glm::vec3(0,0.1,0))*modelMat;
-        transformString = "Ty(+0.1)*" + transformString;
-    } else if (key == GLFW_KEY_S){
-        modelMat = glm::translate(glm::vec3(0,-0.1,0))*modelMat;
-        transformString = "Ty(-0.1)*" + transformString;
-    } else if (key == GLFW_KEY_A){
-        modelMat = glm::translate(glm::vec3(-0.1,0,0))*modelMat;
-        transformString = "Tx(-0.1)*" + transformString;
-    } else if (key == GLFW_KEY_D){
-        modelMat = glm::translate(glm::vec3(0.1,0,0))*modelMat;
-        transformString = "Tx(+0.1)*" + transformString;
-    }
 
-    printRM("model", modelMat);
-    cout << transformString << endl;
+        printRM("model", modelMat);
+        cout << transformString << endl;
+    }
 }
 
 static void error_callback(int error, const char* desc){
@@ -176,7 +178,11 @@ int main(int argc, char **argv){
     glDeleteShader(fragID);
 
     GLint modelMatLoc = glGetUniformLocation(progID, "modelMat");
-    cout << "modelMatLoc: " << endl;
+    GLint viewMatLoc = glGetUniformLocation(progID, "viewMat");
+    GLint projMatLoc = glGetUniformLocation(progID, "projMat");
+    cout << "modelMatLoc: " << modelMatLoc << endl;
+    cout << "viewMatLoc: " << viewMatLoc << endl;
+    cout << "projMatLoc: " << projMatLoc << endl;
 
     vector<GLfloat> vertOnly = {
         -0.3f, -0.3f, 0.0f,
@@ -196,7 +202,8 @@ int main(int argc, char **argv){
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, vertOnly.size()*sizeof(float),
                  vertOnly.data(), GL_STATIC_DRAW);
-    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -222,12 +229,26 @@ int main(int argc, char **argv){
 
     while(!glfwWindowShouldClose(window)){
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
+        float aspect = 1.0f;
+        if(frameHeight > 0 ){
+            aspect = ((float)frameWidth) / ((float)frameHeight);
+        }
+
+        float fov = glm::radians(90.0f);
+
+
         glViewport(0, 0, frameWidth, frameHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
        
         glUseProgram(progID);
 
         glUniformMatrix4fv(modelMatLoc, 1, false, glm::value_ptr(modelMat));
+
+        viewMat = glm::lookAt(glm::vec3(1,0,1), glm::vec3(0,0,0), glm::vec3(0,1,0));
+        glUniformMatrix4fv(viewMatLoc, 1, false, glm::value_ptr(viewMat));
+
+        projMat = glm::perspective(fov, aspect, 0.1f, 1000.0f);
+        glUniformMatrix4fv(projMatLoc, 1, false, glm::value_ptr(projMat));
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, indexCnt, GL_UNSIGNED_INT, (void*)0);
