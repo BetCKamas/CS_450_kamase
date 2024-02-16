@@ -17,6 +17,52 @@ glm::mat4 modelMat(1.0);
 string transformString = "v";
 glm::mat4 viewMat(1.0);
 glm::mat4 projMat(1.0);
+glm::vec2 lastMousePos(0,0);
+bool leftMouseDown = false;
+
+static void mouse_button_callback(GLFWwindow *window, int button,
+                                    int action, int mods) {
+    if(action == GLFW_PRESS) {
+        if(button == GLFW_MOUSE_BUTTON_LEFT) {
+            leftMouseDown = true;
+            cout << "LEFT MOUSE DOWN" << endl;
+        }
+    }
+    else if(action == GLFW_RELEASE) {
+        if(button == GLFW_MOUSE_BUTTON_LEFT) {
+            leftMouseDown = false;
+            cout << "LEFT MOUSE UP" << endl;
+        }        
+    }
+}
+
+static void mouse_motion_callback(GLFWwindow *window, double xpos, double ypos) {
+    glm::vec2 mousePos = glm::vec2(xpos, ypos);
+    glm::vec2 mouseDiff = mousePos - lastMousePos;
+
+    int fw, fh;
+    glfwGetFramebufferSize(window, &fw, &fh);
+
+    if(fw > 0 && fh > 0) {
+        mouseDiff.x /= fw;
+        mouseDiff.y /= fh;
+
+        mouseDiff.y = -mouseDiff.y;
+    }       
+    cout << "MOUSE DIFF: " << glm::to_string(mouseDiff) << endl;
+    
+    float angle = 2.0f*mouseDiff.x;
+    glm::mat4 R;
+    if(!leftMouseDown) {
+        R = glm::rotate(angle, glm::vec3(0,1,0));
+    }
+    else {
+        R = glm::rotate(angle, glm::vec3(1,0,0));
+    }
+    modelMat = R*modelMat;   
+    
+    lastMousePos = glm::vec2(xpos, ypos);
+}
 
 void printRM(string name, glm::mat3 &m) {
     cout << name << ": " << endl;
@@ -155,7 +201,16 @@ int main(int argc, char **argv) {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
+    double mx, my;
+    glfwGetCursorPos(window, &mx, &my);
+    lastMousePos = glm::vec2(mx, my);
+
+    glfwSetInputMode(window, GLFW_CURSOR, 
+                        GLFW_CURSOR_DISABLED);
+
     glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCursorPosCallback(window, mouse_motion_callback);
 
     glewExperimental = true;
     GLenum err = glewInit();
