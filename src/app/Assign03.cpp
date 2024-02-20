@@ -129,125 +129,127 @@ void extractMeshData(aiMesh *mesh, Mesh &m){
 
 // Main
 int main(int argc, char **argv) {
+	string filename;
 
 	if(argc >= 2){
-		char* filename = argv[1];
-
-		// Are we in debugging mode?
-		bool DEBUG_MODE = true;
-
-		// GLFW setup
-		// Switch to 4.1 if necessary for macOS
-		GLFWwindow* window = setupGLFW("Assign03: kamase", 4, 1, 800, 800, DEBUG_MODE);
-
-		// GLEW setup
-		setupGLEW(window);
-
-		// Check OpenGL version
-		checkOpenGLVersion();
-
-		// Assimp initialize 
-		Assimp::Importer importer;
-		const aiScene *object = importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_FlipUVs |
-									aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
-
-		if(!object | object->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !object->mRootNode) {
-			cerr << "Error: " << importer.GetErrorString() << endl;
-			exit(1);
-		}
-
-
-		// Set up debugging (if requested)
-		if(DEBUG_MODE) checkAndSetupOpenGLDebugging();
-
-		// Set the background color to a shade of purple
-		glClearColor(0.5f, 0.0f, 0.7f, 1.0f);
-
-		// Create and load shaders
-		GLuint programID = 0;
-		try {
-			// Load vertex shader code and fragment shader code
-			string vertexCode = readFileToString("./shaders/Assign03/Basic.vs");
-			string fragCode = readFileToString("./shaders/Assign03/Basic.fs");
-
-			// Print out shader code, just to check
-			if(DEBUG_MODE) printShaderCode(vertexCode, fragCode);
-
-			// Create shader program from code
-			programID = initShaderProgramFromSource(vertexCode, fragCode);
-		}
-		catch (exception e) {
-			// Close program
-			cleanupGLFW(window);
-			exit(EXIT_FAILURE);
-		}
-
-		// Create simple quad
-		// Mesh m;
-		// createSimpleQuad(m);
-		// createSimplePentagon(m);
-
-		// Create OpenGL mesh (VAO) from data
-		// MeshGL mgl;
-		// createMeshGL(m, mgl);
-
-		vector<MeshGL> meshes;
-
-		for(int i = 0; i < object->mNumMeshes; i++){
-			Mesh m;
-			MeshGL mgl;
-			extractMeshData(object->mMeshes[i], m);
-			createMeshGL(m, mgl);
-			meshes.push_back(mgl);
-		}
-
-		// Enable depth testing
-		glEnable(GL_DEPTH_TEST);
-
-		while (!glfwWindowShouldClose(window)) {
-			// Set viewport size
-			int fwidth, fheight;
-			glfwGetFramebufferSize(window, &fwidth, &fheight);
-			glViewport(0, 0, fwidth, fheight);
-
-			// Clear the framebuffer
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			// Use shader program
-			glUseProgram(programID);
-
-			// Draw object
-			// drawMesh(mgl);
-			for(int i = 0; i < meshes.size(); i++){
-				drawMesh(meshes[i]);
-			}
-
-			// Swap buffers and poll for window events
-			glfwSwapBuffers(window);
-			glfwPollEvents();
-
-			// Sleep for 15 ms
-			this_thread::sleep_for(chrono::milliseconds(15));
-		}
-
-		// Clean up mesh
-		// cleanupMesh(mgl);
-
-		for(int i = 0; i < meshes.size(); i++){
-			cleanupMesh(meshes[i]);
-		}
-
-		meshes.clear();
-
-		// Clean up shader programs
-		glUseProgram(0);
-		glDeleteProgram(programID);
-
-		// Destroy window and stop GLFW
-		cleanupGLFW(window);
+		filename = argv[1];
 	} else {
-		cerr << "No filename provided" << endl;
+		filename = "sampleModels/sphere.obj";
 	}
+	
+	// Are we in debugging mode?
+	bool DEBUG_MODE = true;
+
+	// GLFW setup
+	// Switch to 4.1 if necessary for macOS
+	GLFWwindow* window = setupGLFW("Assign03: kamase", 4, 1, 800, 800, DEBUG_MODE);
+
+	// GLEW setup
+	setupGLEW(window);
+
+	// Check OpenGL version
+	checkOpenGLVersion();
+
+	// Assimp initialize 
+	Assimp::Importer importer;
+	const aiScene *object = importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_FlipUVs |
+								aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
+
+	if(!object | object->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !object->mRootNode) {
+		cerr << "Error: " << importer.GetErrorString() << endl;
+		exit(1);
+	}
+
+
+	// Set up debugging (if requested)
+	if(DEBUG_MODE) checkAndSetupOpenGLDebugging();
+
+	// Set the background color to a shade of purple
+	glClearColor(0.5f, 0.0f, 0.7f, 1.0f);
+
+	// Create and load shaders
+	GLuint programID = 0;
+	try {
+		// Load vertex shader code and fragment shader code
+		string vertexCode = readFileToString("./shaders/Assign03/Basic.vs");
+		string fragCode = readFileToString("./shaders/Assign03/Basic.fs");
+
+		// Print out shader code, just to check
+		if(DEBUG_MODE) printShaderCode(vertexCode, fragCode);
+
+		// Create shader program from code
+		programID = initShaderProgramFromSource(vertexCode, fragCode);
+	}
+	catch (exception e) {
+		// Close program
+		cleanupGLFW(window);
+		exit(EXIT_FAILURE);
+	}
+
+	// Create simple quad
+	// Mesh m;
+	// createSimpleQuad(m);
+	// createSimplePentagon(m);
+
+	// Create OpenGL mesh (VAO) from data
+	// MeshGL mgl;
+	// createMeshGL(m, mgl);
+
+	vector<MeshGL> meshes;
+
+	for(int i = 0; i < object->mNumMeshes; i++){
+		Mesh m;
+		MeshGL mgl;
+		extractMeshData(object->mMeshes[i], m);
+		createMeshGL(m, mgl);
+		meshes.push_back(mgl);
+	}
+
+	// Enable depth testing
+	glEnable(GL_DEPTH_TEST);
+
+	while (!glfwWindowShouldClose(window)) {
+		// Set viewport size
+		int fwidth, fheight;
+		glfwGetFramebufferSize(window, &fwidth, &fheight);
+		glViewport(0, 0, fwidth, fheight);
+
+		// Clear the framebuffer
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Use shader program
+		glUseProgram(programID);
+
+		// Draw object
+		// drawMesh(mgl);
+		for(int i = 0; i < meshes.size(); i++){
+			drawMesh(meshes[i]);
+		}
+
+		// Swap buffers and poll for window events
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+
+		// Sleep for 15 ms
+		this_thread::sleep_for(chrono::milliseconds(15));
+	}
+
+	// Clean up mesh
+	// cleanupMesh(mgl);
+
+	for(int i = 0; i < meshes.size(); i++){
+		cleanupMesh(meshes[i]);
+	}
+
+	meshes.clear();
+
+	// Clean up shader programs
+	glUseProgram(0);
+	glDeleteProgram(programID);
+
+	// Destroy window and stop GLFW
+	cleanupGLFW(window);
+
 
 	return 0;
 }
