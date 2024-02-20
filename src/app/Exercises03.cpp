@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Shader.hpp"
+#include "MeshData.hpp"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERMENTIAL
@@ -22,6 +23,13 @@ glm::mat4 viewMat(1.0);
 glm::mat4 projMat(1.0);
 glm::vec2 lastMousePos(0,0);
 bool leftMouseDown = false;
+
+struct PointLight{
+    glm::vec4 pos = glm::vec4(0,0,0,1);
+    glm::vec4 color = glm::vec4(1,1,1,1);
+};
+
+PointLight light;
 
 static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods){
     if(action == GLFW_PRESS){
@@ -231,16 +239,49 @@ int main(int argc, char **argv){
     GLint modelMatLoc = glGetUniformLocation(progID, "modelMat");
     GLint viewMatLoc = glGetUniformLocation(progID, "viewMat");
     GLint projMatLoc = glGetUniformLocation(progID, "projMat");
+    GLint normalMatLoc = glGetUniformLocation(progID, "normalMat");
     cout << "modelMatLoc: " << modelMatLoc << endl;
     cout << "viewMatLoc: " << viewMatLoc << endl;
     cout << "projMatLoc: " << projMatLoc << endl;
+    cout << "normalMatLoc: " << normalMatLoc << endl;
+    GLint lightPosLoc = glGetUniformLocation(progID, "light.pos");
+    GLint lightColorLoc = glGetUniformLocation(progID, "light.color");
 
-    vector<GLfloat> vertOnly = {
-        -0.3f, -0.3f, 0.0f,
-         0.3f, -0.3f, 0.0f,
-        -0.3f,  0.3f, 0.0f,
-         0.3f,  0.3f, 0.0f
-    };
+    /*  vector<GLfloat> vertOnly = {
+            -0.3f, -0.3f, 0.0f,
+            0.3f, -0.3f, 0.0f,
+            -0.3f,  0.3f, 0.0f,
+            0.3f,  0.3f, 0.0f
+        };
+    */
+
+    vector<Vertex> vertOnly;
+
+    Vertex v0;
+    v0.position = glm::vec3(-0.3f, -0.3f, 0.0f);
+    v0.color = glm::vec4(0,1,0,1);
+    v0.normal = glm::normalize(glm::vec3(-1,-1,1));
+    vertOnly.push_back(v0);
+
+    Vertex v1;
+    v1.position = glm::vec3(0.3f, -0.3f, 0.0f);
+    v1.color = glm::vec4(1,1,0,1);
+    v1.normal = glm::normalize(glm::vec3(1,-1,1));
+    vertOnly.push_back(v1);
+    
+    Vertex v2;
+    v2.position = glm::vec3(-0.3f, 0.3f, 0.0f);
+    v2.color = glm::vec4(0,1,1,1);
+    v2.normal = glm::normalize(glm::vec3(-1,1,1)); 
+    vertOnly.push_back(v2);
+      
+    Vertex v3;
+    v3.position = glm::vec3(0.3f, 0.3f, 0.0f);
+    v3.color = glm::vec4(1,0,0,1);
+    v3.normal = glm::normalize(glm::vec3(1,1,1));    
+    vertOnly.push_back(v3);
+
+  
 
     vector<GLuint> indices = { 0, 1, 2, 1, 3, 2};
     int indexCnt = (int)indices.size();
@@ -251,7 +292,7 @@ int main(int argc, char **argv){
 
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertOnly.size()*sizeof(float),
+    glBufferData(GL_ARRAY_BUFFER, vertOnly.size()*sizeof(Vertex),
                  vertOnly.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -259,7 +300,12 @@ int main(int argc, char **argv){
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 3*sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, position));
+    glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color));
+    glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+    
 
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -277,6 +323,8 @@ int main(int argc, char **argv){
     
     glClearColor(0.3, 0.0, 0.3, 1.0);
     glEnable(GL_DEPTH_TEST);
+
+    light.pos = glm::vec4(-0.5, 0.5, 0.5, 1.0);
 
     while(!glfwWindowShouldClose(window)){
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
@@ -300,6 +348,13 @@ int main(int argc, char **argv){
 
         projMat = glm::perspective(fov, aspect, 0.1f, 1000.0f);
         glUniformMatrix4fv(projMatLoc, 1, false, glm::value_ptr(projMat));
+
+        glm::mat3 normalMat = glm::transpose(glm::inverse(glm::mat3(viewMat*modelMat)));
+        glUniformMatrix3fv(normalMatLoc, 1, false, glm::value_ptr(normalMat));
+
+        glm::vec4 lightPos = viewMat*light.pos;
+        glUniform4fv(lightPosLoc, 1, glm::value_ptr(light.pos));
+        glUniform4fv(lightColorLoc, 1, glm::value_ptr(light.color));
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, indexCnt, GL_UNSIGNED_INT, (void*)0);
