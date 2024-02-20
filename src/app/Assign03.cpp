@@ -131,7 +131,7 @@ void extractMeshData(aiMesh *mesh, Mesh &m){
 int main(int argc, char **argv) {
 
 	if(argc >= 2){
-		string filename = argv[1];
+		char* filename = argv[1];
 
 		// Are we in debugging mode?
 		bool DEBUG_MODE = true;
@@ -145,6 +145,17 @@ int main(int argc, char **argv) {
 
 		// Check OpenGL version
 		checkOpenGLVersion();
+
+		// Assimp initialize 
+		Assimp::Importer importer;
+		const aiScene *object = importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_FlipUVs |
+									aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
+
+		if(!object | object->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !object->mRootNode) {
+			cerr << "Error: " << importer.GetErrorString() << endl;
+			exit(1);
+		}
+
 
 		// Set up debugging (if requested)
 		if(DEBUG_MODE) checkAndSetupOpenGLDebugging();
@@ -172,14 +183,13 @@ int main(int argc, char **argv) {
 		}
 
 		// Create simple quad
-		Mesh m;
+		// Mesh m;
 		// createSimpleQuad(m);
 		// createSimplePentagon(m);
-		extractMeshData();
 
 		// Create OpenGL mesh (VAO) from data
-		MeshGL mgl;
-		createMeshGL(m, mgl);
+		// MeshGL mgl;
+		// createMeshGL(m, mgl);
 
 		// Enable depth testing
 		glEnable(GL_DEPTH_TEST);
@@ -217,7 +227,7 @@ int main(int argc, char **argv) {
 		// Destroy window and stop GLFW
 		cleanupGLFW(window);
 	} else {
-		cerr << "No filename provided" 
+		cerr << "No filename provided" << endl;
 	}
 
 	return 0;
