@@ -191,6 +191,16 @@ int main(int argc, char **argv) {
 		// MeshGL mgl;
 		// createMeshGL(m, mgl);
 
+		vector<MeshGL> meshes;
+
+		for(int i = 0; i < object->mNumMeshes; i++){
+			Mesh m;
+			MeshGL mgl;
+			extractMeshData(object->mMeshes[i], m);
+			createMeshGL(m, mgl);
+			meshes.push_back(mgl);
+		}
+
 		// Enable depth testing
 		glEnable(GL_DEPTH_TEST);
 
@@ -207,7 +217,10 @@ int main(int argc, char **argv) {
 			glUseProgram(programID);
 
 			// Draw object
-			drawMesh(mgl);
+			// drawMesh(mgl);
+			for(int i = 0; i < meshes.size(); i++){
+				drawMesh(meshes[i]);
+			}
 
 			// Swap buffers and poll for window events
 			glfwSwapBuffers(window);
@@ -218,7 +231,13 @@ int main(int argc, char **argv) {
 		}
 
 		// Clean up mesh
-		cleanupMesh(mgl);
+		// cleanupMesh(mgl);
+
+		for(int i = 0; i < meshes.size(); i++){
+			cleanupMesh(meshes[i]);
+		}
+
+		meshes.clear();
 
 		// Clean up shader programs
 		glUseProgram(0);
