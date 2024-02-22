@@ -5,6 +5,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "Shader.hpp"
+#include "MeshData.hpp"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
@@ -19,6 +20,13 @@ glm::mat4 viewMat(1.0);
 glm::mat4 projMat(1.0);
 glm::vec2 lastMousePos(0,0);
 bool leftMouseDown = false;
+
+struct PointLight {
+    glm::vec4 pos = glm::vec4(0,0,0,1);
+    glm::vec4 color = glm::vec4(1,1,1,1);
+};
+
+PointLight light;
 
 static void mouse_button_callback(GLFWwindow *window, int button,
                                     int action, int mods) {
@@ -145,6 +153,51 @@ static void error_callback(int error, const char* desc) {
     cerr << "ERROR " << error << ": " << desc << endl;
 }
 
+void makeCylinder(Mesh &m, float length, float radius, int faceCnt) {
+    m.vertices.clear();
+    m.indices.clear();
+
+    double angleInc = glm::radians(360.0/faceCnt);
+    double halfLen = length/2.0;
+
+    for(int i = 0; i < faceCnt; i++) {
+        double angle = angleInc*i;
+        double z = radius*cos(angle);
+        double y = radius*sin(angle);
+        glm::vec3 left = glm::vec3(-halfLen, y, z);
+        glm::vec3 right = glm::vec3(+halfLen, y, z);
+        Vertex vleft, vright;
+        vleft.position = left;
+        vright.position = right;
+        vleft.color = glm::vec4(1,0,0,1);
+        vright.color = glm::vec4(0,1,0,1);
+        m.vertices.push_back(vleft);
+        m.vertices.push_back(vright);
+    }
+
+    int vcnt = m.vertices.size();
+
+    for(int i = 0; i < faceCnt; i++) {
+        int k = i*2;
+        // 0,1,2     1,3,2
+        m.indices.push_back(k);
+        m.indices.push_back(k+1);
+        m.indices.push_back((k+2)%vcnt);
+
+        m.indices.push_back(k+1);
+        m.indices.push_back((k+3)%vcnt);
+        m.indices.push_back((k+2)%vcnt);
+    }
+}
+
+glm::vec3 computeNormal(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
+    glm::vec3 AB = B - A;
+    glm::vec3 AC = C - A;
+    glm::vec3 N = glm::cross(AB, AC);
+    N = glm::normalize(N);
+    return N;
+}
+
 int main(int argc, char **argv) {
     cout << "BEGIN OPENGL ADVENTURE!" << endl;
 
@@ -248,19 +301,59 @@ int main(int argc, char **argv) {
     GLint modelMatLoc = glGetUniformLocation(progID, "modelMat");
     GLint viewMatLoc = glGetUniformLocation(progID, "viewMat");
     GLint projMatLoc = glGetUniformLocation(progID, "projMat");
+    GLint normalMatLoc = glGetUniformLocation(progID, "normalMat");
     cout << "modelMatLoc: " << modelMatLoc << endl;
     cout << "viewMatLoc: " << viewMatLoc << endl;
     cout << "projMatLoc: " << projMatLoc << endl;
+    cout << "normalMatLoc: " << normalMatLoc << endl;
+    GLint lightPosLoc = glGetUniformLocation(progID, "light.pos");
+    GLint lightColorLoc = glGetUniformLocation(progID, "light.color");
 
+    /*
     vector<GLfloat> vertOnly = {
         -0.3f, -0.3f, 0.0f,
         0.3f, -0.3f, 0.0f,
         -0.3f, 0.3f, 0.0f,
         0.3f, 0.3f, 0.0f,
     };
+    */
 
-    vector<GLuint> indices = { 0, 1, 2, 1, 3, 2 };
-    int indexCnt = (int)indices.size();
+   float quadScale = 1.0f; //0.3f;
+
+    //vector<Vertex> vertOnly;
+    Mesh quad;
+
+    Vertex v0;
+    v0.position = glm::vec3(-quadScale, -quadScale, 0.0f);
+    v0.color = glm::vec4(0,1,0,1);
+    v0.normal = glm::normalize(glm::vec3(-1,-1,1));
+    quad.vertices.push_back(v0);
+
+    Vertex v1;
+    v1.position = glm::vec3(quadScale, -quadScale, 0.0f);
+    v1.color = glm::vec4(0.5,0.5,0,1);
+    v1.normal = glm::normalize(glm::vec3(1,-1,1));
+    quad.vertices.push_back(v1);
+
+    Vertex v2;
+    v2.position = glm::vec3(-quadScale, quadScale, 0.0f);
+    v2.color = glm::vec4(0,1,1,1);
+    v2.normal = glm::normalize(glm::vec3(-1,1,1));
+    quad.vertices.push_back(v2);
+
+    Vertex v3;
+    v3.position = glm::vec3(quadScale, quadScale, 0.0f);
+    v3.color = glm::vec4(0,0,1,1);
+    v3.normal = glm::normalize(glm::vec3(1,1,1));
+    quad.vertices.push_back(v3);
+
+    quad.indices = { 0, 1, 2, 1, 3, 2 };
+    
+    Mesh cylinder;
+    makeCylinder(cylinder, 7.0, 2.0, 36);
+
+    Mesh m = cylinder; //quad;
+    int indexCnt = (int)m.indices.size();
 
     GLuint VBO = 0;
     GLuint EBO = 0;
@@ -268,8 +361,8 @@ int main(int argc, char **argv) {
 
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertOnly.size()*sizeof(float), 
-                        vertOnly.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, m.vertices.size()*sizeof(Vertex), 
+                        m.vertices.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     
@@ -277,12 +370,19 @@ int main(int argc, char **argv) {
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 3*sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), 
+                            (void*)offsetof(Vertex, position));
+    glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex), 
+                            (void*)offsetof(Vertex, color));
+    glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(Vertex), 
+                            (void*)offsetof(Vertex, normal));
 
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(GLuint),
-                    indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m.indices.size()*sizeof(GLuint),
+                    m.indices.data(), GL_STATIC_DRAW);
     
 
     glBindVertexArray(0);
@@ -300,6 +400,8 @@ int main(int argc, char **argv) {
     glClearColor(1.0, 1.0, 0.0, 1.0);
     glEnable(GL_DEPTH_TEST);
 
+    light.pos = glm::vec4(-0.5, 0.5, 0.5, 1.0);
+
     while(!glfwWindowShouldClose(window)) {
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
         float aspect = 1.0f;
@@ -314,11 +416,18 @@ int main(int argc, char **argv) {
 
         glUniformMatrix4fv(modelMatLoc, 1, false, glm::value_ptr(modelMat));
 
-        viewMat = glm::lookAt(glm::vec3(1,0,1), glm::vec3(0,0,0), glm::vec3(0,1,0));
+        viewMat = glm::lookAt(glm::vec3(4,4,4), glm::vec3(0,0,0), glm::vec3(0,1,0));
         glUniformMatrix4fv(viewMatLoc, 1, false, glm::value_ptr(viewMat));
 
         projMat = glm::perspective(fov, aspect, 0.1f, 1000.0f);
         glUniformMatrix4fv(projMatLoc, 1, false, glm::value_ptr(projMat));
+
+        glm::mat3 normalMat = glm::transpose(glm::inverse(glm::mat3(viewMat*modelMat)));
+        glUniformMatrix3fv(normalMatLoc, 1, false, glm::value_ptr(normalMat));
+
+        glm::vec4 lightPos = viewMat*light.pos;
+        glUniform4fv(lightPosLoc, 1, glm::value_ptr(lightPos));
+        glUniform4fv(lightColorLoc, 1, glm::value_ptr(light.color));
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, indexCnt, 
