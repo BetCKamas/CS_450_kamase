@@ -155,7 +155,7 @@ void computeAllNormals(Mesh &m){
         m.vertices[i].normal = glm::vec3(0,0,0);
     }
 
-    for(int i = 0; i < m.indices.size(); i++){
+    for(int i = 0; i < m.indices.size(); i+=3){
         int ind0 = m.indices[i];
         int ind1 = m.indices[i+1];
         int ind2 = m.indices[i+2];
@@ -409,7 +409,7 @@ int main(int argc, char **argv){
     glClearColor(0.3, 0.0, 0.3, 1.0);
     glEnable(GL_DEPTH_TEST);
 
-    light.pos = glm::vec4(0, 6, 6, 1.0);
+    light.pos = glm::vec4(0, 5, 6, 1.0);
 
     while(!glfwWindowShouldClose(window)){
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
