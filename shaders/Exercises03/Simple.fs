@@ -12,9 +12,14 @@ struct PointLight{
 };
 
 uniform PointLight light;
+uniform sampler2D diffuseTexture;
+in vec2 interUV;
 
 void main(){
     vec3 N = normalize(interNormal);
+
+    vec4 texColor = texture(diffuseTexture, interUV);
+
     vec3 lightPos = vec3(light.pos);
     vec3 L = lightPos - interPos;
     float dist = length(L);
@@ -27,5 +32,6 @@ void main(){
     //out_color = vec4(N, 1.0);
     float diff = max(dot(N,L), 0.0);
     vec3 diff_color = diff*vec3(interColor);
-    out_color = vec4(diff_color, 1.0);
+    //out_color = vec4(diff_color, 1.0);
+    out_color = texColor;
 }
