@@ -12,6 +12,8 @@
 #include "glm/gtx/string_cast.hpp"
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 using namespace std;
 
 glm::mat4 modelMat(1.0);
@@ -205,6 +207,10 @@ void makeCylinder(Mesh &m, float length, float radius, int faceCnt) {
         vright.position = right;
         vleft.color = glm::vec4(1,0,0,1);
         vright.color = glm::vec4(0,1,0,1);
+
+        vleft.texcoord = glm::vec2(0.0f, ((float)i)/20.0f);
+        vright.texcoord = glm::vec2(1.0f, ((float)i)/20.0f);
+
         m.vertices.push_back(vleft);
         m.vertices.push_back(vright);
     }
@@ -337,6 +343,44 @@ int main(int argc, char **argv) {
     GLint lightPosLoc = glGetUniformLocation(progID, "light.pos");
     GLint lightColorLoc = glGetUniformLocation(progID, "light.color");
 
+    string textureFilename = "./image01.png";
+    int texWidth, texHeight, texComponents;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *imageData = stbi_load(textureFilename.c_str(), 
+                                            &texWidth, 
+                                            &texHeight, 
+                                            &texComponents, 0);
+    unsigned int texID = 0;
+    if(imageData) {
+        glGenTextures(1, &texID);
+        GLenum format;
+        if(texComponents == 3) {
+            format = GL_RGB;
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        }
+        else {
+            format = GL_RGBA;
+        }
+        glBindTexture(GL_TEXTURE_2D, texID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, texWidth, texHeight, 0,
+                            format, GL_UNSIGNED_BYTE, imageData);
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        stbi_image_free(imageData);
+    }
+    else {
+        cerr << "ERROR: Texture could not load!" << endl;
+        glfwTerminate();
+        exit(1);
+    }
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texID);
+    GLint diffuseTexLoc = glGetUniformLocation(progID, "diffuseTexture");
+
     /*
     vector<GLfloat> vertOnly = {
         -0.3f, -0.3f, 0.0f,
@@ -400,12 +444,15 @@ int main(int argc, char **argv) {
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
     glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), 
                             (void*)offsetof(Vertex, position));
     glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex), 
                             (void*)offsetof(Vertex, color));
     glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(Vertex), 
                             (void*)offsetof(Vertex, normal));
+    glVertexAttribPointer(3, 2, GL_FLOAT, false, sizeof(Vertex), 
+                            (void*)offsetof(Vertex, texcoord));
 
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -457,6 +504,8 @@ int main(int argc, char **argv) {
         glUniform4fv(lightPosLoc, 1, glm::value_ptr(lightPos));
         glUniform4fv(lightColorLoc, 1, glm::value_ptr(light.color));
 
+        glUniform1i(diffuseTexLoc, 0);
+
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, indexCnt, 
                         GL_UNSIGNED_INT, (void*)0);
@@ -467,6 +516,9 @@ int main(int argc, char **argv) {
         glfwPollEvents();
         this_thread::sleep_for(chrono::milliseconds(15));
     }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDeleteTextures(1, &texID);
 
     glBindVertexArray(0);
     glDeleteVertexArrays(1, &VAO);
