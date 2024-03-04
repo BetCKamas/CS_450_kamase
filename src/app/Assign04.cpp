@@ -13,6 +13,7 @@
 #include "MeshGLData.hpp"
 #include "GLSetup.hpp"
 #include "Shader.hpp"
+#include "Shader.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/transform.hpp"
@@ -24,25 +25,51 @@ using namespace std;
 
 float rotAngle = 0.0f;
 
-glm::mat4 makeRotateZ(glm::vec3 offset){
-
-}
-
-void renderScene(vector<MeshGL> &allMeshes, aiNode *node, glm::mat4 parentMat, GLint modelMatLoc, int level){
-
-}
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
     if(action == GLFW_PRESS || action == GLFW_REPEAT){
         if(key == GLFW_KEY_ESCAPE){
             glfwSetWindowShouldClose(window, true);
         } else if (key == GLFW_KEY_J){
+			//cout << "ADDING" << endl;
             rotAngle += 1.0f;
         } else if (key == GLFW_KEY_K){
+			//cout << "subtracting" << endl;
 			rotAngle -= 1.0f;
 		}
-
+		cout << "rotAngle: " << rotAngle << endl;
     }
 }
+
+
+glm::mat4 makeRotateZ(glm::vec3 offset){
+	glm::mat4 t1 = glm::translate(glm::mat4(1.0), -offset);
+	glm::mat4 r = glm::rotate(glm::mat4(1.0), glm::radians(rotAngle), glm::vec3(0,0,1));
+	glm::mat4 t2 =glm::translate(glm::mat4(1.0),offset);
+	return t2*r*t1;
+}
+
+void renderScene(vector<MeshGL> &allMeshes, aiNode *node, glm::mat4 parentMat, GLint modelMatLoc, int level){
+	glm::mat4 nodeT(1.0);
+	aiMatToGLM4(node->mTransformation, nodeT);
+	glm::mat4 modelMat = parentMat*nodeT;
+	glm::mat4 tmpModel = modelMat;
+	glm::vec3 pos = glm::vec3(modelMat[3]);
+	glm::mat4 R(1.0);
+	R = makeRotateZ(pos);
+	tmpModel = R*modelMat;
+	glUniformMatrix4fv(modelMatLoc, 1, GL_FALSE, glm::value_ptr(tmpModel));
+
+	for(int i = 0; i < node->mNumMeshes; i++){
+		int index = node->mMeshes[i];
+		drawMesh(allMeshes.at(index));
+	}
+	for(int i = 0; i < node->mNumChildren; i++){
+		renderScene(allMeshes, node->mChildren[i], modelMat, modelMatLoc, level+1);
+	}
+
+}
+
+
 // Create very simple mesh: a quad (4 vertices, 6 indices, 2 triangles)
 void createSimpleQuad(Mesh &m) {
 	// Clear out vertices and elements
@@ -142,7 +169,7 @@ void extractMeshData(aiMesh *mesh, Mesh &m){
 	for(int i = 0; i < mesh->mNumVertices; i++){
 		Vertex current;
 		current.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-		current.color = glm::vec4(0.0, 0.5, 0.5, 1.0);
+		current.color = glm::vec4(0.0, 1.0, 0.0, 1.0);
 		m.vertices.push_back(current);
 	}
 
@@ -153,6 +180,7 @@ void extractMeshData(aiMesh *mesh, Mesh &m){
 		}
 	}
 }
+
 
 // Main
 int main(int argc, char **argv) {
@@ -213,17 +241,11 @@ int main(int argc, char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	// Create simple quad
-	// Mesh m;
-	// createSimpleQuad(m);
-	// createSimplePentagon(m);
-
-	// Create OpenGL mesh (VAO) from data
-	// MeshGL mgl;
-	// createMeshGL(m, mgl);
+	glfwSetKeyCallback(window, key_callback);
 
 	vector<MeshGL> meshes;
 
+	// Create OpenGL mesh (VAO) from data
 	for(int i = 0; i < object->mNumMeshes; i++){
 		Mesh m;
 		MeshGL mgl;
@@ -232,6 +254,9 @@ int main(int argc, char **argv) {
 		meshes.push_back(mgl);
 	}
 
+	GLint modelMatLoc = glGetUniformLocation(programID, "modelMat");
+	//cout << "modelMatLoc: " << modelMatLoc << endl;
+	
 	// Enable depth testing
 	glEnable(GL_DEPTH_TEST);
 
@@ -248,10 +273,7 @@ int main(int argc, char **argv) {
 		glUseProgram(programID);
 
 		// Draw object
-		// drawMesh(mgl);
-		for(int i = 0; i < meshes.size(); i++){
-			drawMesh(meshes[i]);
-		}
+		renderScene(meshes, object->mRootNode, glm::mat4(1.0), modelMatLoc, 0);
 
 		// Swap buffers and poll for window events
 		glfwSwapBuffers(window);
