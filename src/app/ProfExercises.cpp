@@ -208,8 +208,8 @@ void makeCylinder(Mesh &m, float length, float radius, int faceCnt) {
         vleft.color = glm::vec4(1,0,0,1);
         vright.color = glm::vec4(0,1,0,1);
 
-        vleft.texcoord = glm::vec2(0.0f, ((float)i)/20.0f);
-        vright.texcoord = glm::vec2(1.0f, ((float)i)/20.0f);
+        vleft.texcoord = glm::vec2(0.0f, 2.0f*((float)i)/faceCnt);
+        vright.texcoord = glm::vec2(2.0f, 2.0f*((float)i)/faceCnt);
 
         m.vertices.push_back(vleft);
         m.vertices.push_back(vright);
@@ -343,7 +343,7 @@ int main(int argc, char **argv) {
     GLint lightPosLoc = glGetUniformLocation(progID, "light.pos");
     GLint lightColorLoc = glGetUniformLocation(progID, "light.color");
 
-    string textureFilename = "./image01.png";
+    string textureFilename = "./test.png";
     int texWidth, texHeight, texComponents;
     stbi_set_flip_vertically_on_load(true);
     unsigned char *imageData = stbi_load(textureFilename.c_str(), 
@@ -367,6 +367,13 @@ int main(int argc, char **argv) {
         
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTexParameteri(GL_TEXTURE_2D, 
+                        GL_TEXTURE_WRAP_S, 
+                        GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, 
+                        GL_TEXTURE_WRAP_T, 
+                        GL_MIRRORED_REPEAT);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         stbi_image_free(imageData);
