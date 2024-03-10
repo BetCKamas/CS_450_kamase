@@ -232,6 +232,53 @@ void makeCylinder(Mesh &m, float length, float radius, int faceCnt) {
     computeAllNormals(m);
 }
 
+unsigned int loadAndCreateTexture(string filename) {
+    
+    int texWidth, texHeight, texComponents;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *imageData = stbi_load(filename.c_str(), 
+                                            &texWidth, 
+                                            &texHeight, 
+                                            &texComponents, 0);
+    unsigned int texID = 0;
+    if(imageData) {
+        glGenTextures(1, &texID);
+        GLenum format;
+        if(texComponents == 3) {
+            format = GL_RGB;
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        }
+        else {
+            format = GL_RGBA;
+        }
+        glBindTexture(GL_TEXTURE_2D, texID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, texWidth, texHeight, 0,
+                            format, GL_UNSIGNED_BYTE, imageData);
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTexParameteri(GL_TEXTURE_2D, 
+                        GL_TEXTURE_WRAP_S,
+                        GL_REPEAT); 
+                        //GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, 
+                        GL_TEXTURE_WRAP_T, 
+                        GL_REPEAT);
+                        //GL_MIRRORED_REPEAT);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        stbi_image_free(imageData);
+    }
+    else {
+        cerr << "ERROR: Texture could not load!" << endl;
+        glfwTerminate();
+        exit(1);
+    }
+
+    return texID;
+}
+
 int main(int argc, char **argv) {
     cout << "BEGIN OPENGL ADVENTURE!" << endl;
 
@@ -343,50 +390,16 @@ int main(int argc, char **argv) {
     GLint lightPosLoc = glGetUniformLocation(progID, "light.pos");
     GLint lightColorLoc = glGetUniformLocation(progID, "light.color");
 
-    string textureFilename = "./test.png";
-    int texWidth, texHeight, texComponents;
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char *imageData = stbi_load(textureFilename.c_str(), 
-                                            &texWidth, 
-                                            &texHeight, 
-                                            &texComponents, 0);
-    unsigned int texID = 0;
-    if(imageData) {
-        glGenTextures(1, &texID);
-        GLenum format;
-        if(texComponents == 3) {
-            format = GL_RGB;
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        }
-        else {
-            format = GL_RGBA;
-        }
-        glBindTexture(GL_TEXTURE_2D, texID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, texWidth, texHeight, 0,
-                            format, GL_UNSIGNED_BYTE, imageData);
-        
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glTexParameteri(GL_TEXTURE_2D, 
-                        GL_TEXTURE_WRAP_S, 
-                        GL_MIRRORED_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, 
-                        GL_TEXTURE_WRAP_T, 
-                        GL_MIRRORED_REPEAT);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        stbi_image_free(imageData);
-    }
-    else {
-        cerr << "ERROR: Texture could not load!" << endl;
-        glfwTerminate();
-        exit(1);
-    }
+    unsigned int diffTexID = loadAndCreateTexture("test.png");
+    unsigned int normTexID = loadAndCreateTexture("normal.png");
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texID);
+    glBindTexture(GL_TEXTURE_2D, diffTexID);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, normTexID);
+
     GLint diffuseTexLoc = glGetUniformLocation(progID, "diffuseTexture");
+    GLint normalTexLoc = glGetUniformLocation(progID, "normalTexture");
 
     /*
     vector<GLfloat> vertOnly = {
@@ -452,6 +465,7 @@ int main(int argc, char **argv) {
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
     glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
     glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), 
                             (void*)offsetof(Vertex, position));
     glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex), 
@@ -460,6 +474,8 @@ int main(int argc, char **argv) {
                             (void*)offsetof(Vertex, normal));
     glVertexAttribPointer(3, 2, GL_FLOAT, false, sizeof(Vertex), 
                             (void*)offsetof(Vertex, texcoord));
+    glVertexAttribPointer(4, 3, GL_FLOAT, false, sizeof(Vertex), 
+                            (void*)offsetof(Vertex, tangent));
 
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -482,7 +498,7 @@ int main(int argc, char **argv) {
     glClearColor(1.0, 1.0, 0.0, 1.0);
     glEnable(GL_DEPTH_TEST);
 
-    light.pos = glm::vec4(0, 5, 6, 1.0);
+    light.pos = glm::vec4(0, 20, 0, 1.0);
 
     while(!glfwWindowShouldClose(window)) {
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
@@ -512,6 +528,7 @@ int main(int argc, char **argv) {
         glUniform4fv(lightColorLoc, 1, glm::value_ptr(light.color));
 
         glUniform1i(diffuseTexLoc, 0);
+        glUniform1i(normalTexLoc, 1);
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, indexCnt, 
@@ -524,8 +541,12 @@ int main(int argc, char **argv) {
         this_thread::sleep_for(chrono::milliseconds(15));
     }
 
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
-    glDeleteTextures(1, &texID);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDeleteTextures(1, &diffTexID);
+    glDeleteTextures(1, &normTexID);
 
     glBindVertexArray(0);
     glDeleteVertexArrays(1, &VAO);
