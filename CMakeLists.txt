@@ -111,3 +111,9 @@ add_executable(ExercisesFBO ${GENERAL_SOURCES} "./src/app/ExercisesFBO.cpp")
 target_link_libraries(ExercisesFBO ${ALL_LIBRARIES})
 install(TARGETS ExercisesFBO RUNTIME DESTINATION bin/ExercisesFBO)
 install(DIRECTORY shaders/ExercisesFBO DESTINATION bin/ExercisesFBO/shaders)
+
+# Assign05
+add_executable(Assign05 ${GENERAL_SOURCES} "./src/app/Assign05.cpp")
+target_link_libraries(Assign05 ${ALL_LIBRARIES})
+install(TARGETS Assign05 RUNTIME DESTINATION bin/Assign05)
+install(DIRECTORY shaders/Assign05 DESTINATION bin/Assign05/shaders)
