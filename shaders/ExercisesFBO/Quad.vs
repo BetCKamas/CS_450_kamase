@@ -1,5 +1,4 @@
-#version 430 core
-// 410 for mac
+#version 410 core
 
 layout(location=0) in vec3 position;
 layout(location=3) in vec2 texcoord;

@@ -6,6 +6,6 @@ in vec2 interUV;
 
 uniform sampler2D screenTexture;
 
-void main(){
+void main() {
     out_color = texture(screenTexture, interUV);
 }

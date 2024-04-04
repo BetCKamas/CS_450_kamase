@@ -416,7 +416,7 @@ int main(int argc, char **argv){
     }
 
     GLuint progID = loadAndCreateShaderProgram("./shaders/ExercisesFBO/Simple.vs", "./shaders/ExercisesFBO/Simple.fs");
-    GLuint quadProgID = loadAndCreateShaderProgram("./shaders/ExercisesFBO/Quad.vs", "./shaders/ExercisesFBO/Quad.fs");
+    GLuint quadProgID = loadAndCreateShaderProgram("./shaders/ExercisesFBO/Quad.vs", "./shaders/ExercisesFBO/Filter.fs");
     
     GLint modelMatLoc = glGetUniformLocation(progID, "modelMat");
     GLint viewMatLoc = glGetUniformLocation(progID, "viewMat");
@@ -435,25 +435,13 @@ int main(int argc, char **argv){
 
     unsigned int diffTexID = loadAndCreateTexture("test.png");
     unsigned int normTexID = loadAndCreateTexture("normal.png");
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffTexID);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normTexID);
+ 
     GLint diffuseTexLoc = glGetUniformLocation(progID, "diffuseTexture");
     GLint normalTexLoc = glGetUniformLocation(progID, "normalTexture");
 
-    /*  vector<GLfloat> vertOnly = {
-            -0.3f, -0.3f, 0.0f,
-            0.3f, -0.3f, 0.0f,
-            -0.3f,  0.3f, 0.0f,
-            0.3f,  0.3f, 0.0f
-        };
-    */
+    GLint screenTexLoc = glGetUniformLocation(quadProgID, "screenTexture");
 
    float quadScale = 1.0f;
-
-    //vector<Vertex> vertOnly;
 
     Mesh quad;
 
@@ -461,27 +449,29 @@ int main(int argc, char **argv){
     v0.position = glm::vec3(-quadScale, -quadScale, 0.0f);
     v0.color = glm::vec4(0,1,0,1);
     v0.normal = glm::normalize(glm::vec3(-1,-1,1));
+    v0.texcoord = glm::vec2(0,0);
     quad.vertices.push_back(v0);
 
     Vertex v1;
     v1.position = glm::vec3(quadScale, -quadScale, 0.0f);
     v1.color = glm::vec4(1,1,0,1);
     v1.normal = glm::normalize(glm::vec3(1,-1,1));
+    v1.texcoord = glm::vec2(1,0);
     quad.vertices.push_back(v1);
     
     Vertex v2;
     v2.position = glm::vec3(-quadScale, quadScale, 0.0f);
     v2.color = glm::vec4(0,1,1,1);
     v2.normal = glm::normalize(glm::vec3(-1,1,1)); 
+    v2.texcoord = glm::vec2(0,1);
     quad.vertices.push_back(v2);
       
     Vertex v3;
     v3.position = glm::vec3(quadScale, quadScale, 0.0f);
     v3.color = glm::vec4(1,0,0,1);
-    v3.normal = glm::normalize(glm::vec3(1,1,1));    
+    v3.normal = glm::normalize(glm::vec3(1,1,1));   
+    v3.texcoord = glm::vec2(1,1); 
     quad.vertices.push_back(v3);
-
-  
 
     //vector<GLuint> indices = { 0, 1, 2, 1, 3, 2};
     quad.indices = { 0, 1, 2, 1, 3, 2};
@@ -491,47 +481,17 @@ int main(int argc, char **argv){
     makeCylinder(cylinder, 7.0, 2.0, 36);
     // Mesh m = quad;
     Mesh m = cylinder;
-    int indexCnt = (int)m.indices.size();
+
+    MeshGL mainGL;
+    createMeshGL(cylinder, mainGL);
+
+    MeshGL quadGL;
+    createMeshGL(quad, quadGL);
 
 
-    GLuint VBO = 0;
-    GLuint EBO = 0;
-    GLuint VAO = 0;
+    cout << "progID:" << progID << endl;
 
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, m.vertices.size()*sizeof(Vertex),
-                 m.vertices.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-    glEnableVertexAttribArray(3);
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, position));
-    glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color));
-    glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-    glVertexAttribPointer(3, 2, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, texcoord));
-    glVertexAttribPointer(4, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
-     
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m.indices.size()*sizeof(GLuint),
-                m.indices.data(), GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    cout << "VAO: " << VAO << endl;
-    cout << "VBO: " << VBO << endl;
-    cout << "EBO: " << EBO << endl;
-    cout << "progID: " << progID << endl;
-    
     glClearColor(0.3, 0.0, 0.3, 1.0);
     glEnable(GL_DEPTH_TEST);
 
@@ -570,12 +530,28 @@ int main(int argc, char **argv){
         glUniform4fv(lightPosLoc, 1, glm::value_ptr(light.pos));
         glUniform4fv(lightColorLoc, 1, glm::value_ptr(light.color));
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffTexID);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, normTexID);
+   
         glUniform1i(diffuseTexLoc, 0);
         glUniform1i(normalTexLoc, 1);
 
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, indexCnt, GL_UNSIGNED_INT, (void*)0);
-        glBindVertexArray(0);
+        drawMesh(mainGL);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glUseProgram(quadProgID);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, fbo.colorIDs.at(0));
+        glUniform1i(screenTexLoc, 0);
+
+        glViewport(0, 0, frameWidth, frameHeight);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+       
+        drawMesh(quadGL);
         glUseProgram(0);
         
         glfwSwapBuffers(window);
@@ -592,15 +568,12 @@ int main(int argc, char **argv){
     glDeleteTextures(1, &diffTexID);
     glDeleteTextures(1, &normTexID);
 
-    glBindVertexArray(0);
-    glDeleteVertexArrays(1, &VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &EBO);
-    glDeleteBuffers(1, &VBO);
+    cleanupMesh(mainGL);
+    cleanupMesh(quadGL);
 
     glUseProgram(0);
     glDeleteProgram(progID);
+    glDeleteProgram(quadProgID);
 
     glfwDestroyWindow(window);
     glfwTerminate();
