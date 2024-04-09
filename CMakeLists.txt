@@ -123,3 +123,11 @@ add_executable(ExercisesDeferred ${GENERAL_SOURCES} "./src/app/ExercisesDeferred
 target_link_libraries(ExercisesDeferred ${ALL_LIBRARIES})
 install(TARGETS ExercisesDeferred RUNTIME DESTINATION bin/ExercisesDeferred)
 install(DIRECTORY shaders/ExercisesDeferred DESTINATION bin/ExercisesDeferred/shaders)
+
+# ProfDeferredExercise
+add_executable(ProfDeferredExercise ${GENERAL_SOURCES} "./src/app/ProfDeferredExercise.cpp")
+target_link_libraries(ProfDeferredExercise ${ALL_LIBRARIES})
+install(TARGETS ProfDeferredExercise RUNTIME DESTINATION bin/ProfDeferredExercise)
+install(DIRECTORY shaders/ProfDeferredExercise DESTINATION bin/ProfDeferredExercise/shaders)
+
+
