@@ -480,8 +480,8 @@ int main(int argc, char **argv){
         exit(1);
     }
 
-    GLuint geoProgID = loadAndCreateShaderProgram("./shaders/ExercisesDifferred/Geo.vs", "./shaders/ExercisesDifferred/Geo.fs");
-    GLuint lightProgID = loadAndCreateShaderProgram("./shaders/ExercisesDifferred/Light.vs", "./shaders/ExercisesDifferred/Light.fs");
+    GLuint geoProgID = loadAndCreateShaderProgram("./shaders/ExercisesDeferred/Geo.vs", "./shaders/ExercisesDeferred/Geo.fs");
+    GLuint lightProgID = loadAndCreateShaderProgram("./shaders/ExercisesDeferred/Light.vs", "./shaders/ExercisesDeferred/Light.fs");
     
     GLint modelMatLoc = glGetUniformLocation(geoProgID, "modelMat");
     GLint viewMatLoc = glGetUniformLocation(geoProgID, "viewMat");

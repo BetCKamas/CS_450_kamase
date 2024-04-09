@@ -118,8 +118,8 @@ target_link_libraries(Assign05 ${ALL_LIBRARIES})
 install(TARGETS Assign05 RUNTIME DESTINATION bin/Assign05)
 install(DIRECTORY shaders/Assign05 DESTINATION bin/Assign05/shaders)
 
-# ExercisesDifferred
-add_executable(ExercisesDifferred ${GENERAL_SOURCES} "./src/app/ExercisesDifferred.cpp")
-target_link_libraries(ExercisesDifferred ${ALL_LIBRARIES})
-install(TARGETS ExercisesDifferred RUNTIME DESTINATION bin/ExercisesDifferred)
-install(DIRECTORY shaders/ExercisesDifferred DESTINATION bin/ExercisesDifferred/shaders)
+# ExercisesDeferred
+add_executable(ExercisesDeferred ${GENERAL_SOURCES} "./src/app/ExercisesDeferred.cpp")
+target_link_libraries(ExercisesDeferred ${ALL_LIBRARIES})
+install(TARGETS ExercisesDeferred RUNTIME DESTINATION bin/ExercisesDeferred)
+install(DIRECTORY shaders/ExercisesDeferred DESTINATION bin/ExercisesDeferred/shaders)
