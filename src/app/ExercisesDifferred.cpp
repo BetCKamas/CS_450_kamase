@@ -573,11 +573,11 @@ int main(int argc, char **argv){
     glClearColor(0.3, 0.0, 0.3, 1.0);
     glEnable(GL_DEPTH_TEST);
 
-    light.pos = glm::vec4(0, 5.0, 6.0, 1.0);
+    //light.pos = glm::vec4(0, 5.0, 6.0, 1.0);
 
     while(!glfwWindowShouldClose(window)){
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo.ID);
+        glBindFramebuffer(GL_FRAMEBUFFER, gb.fbo.ID);
 
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
         float aspect = 1.0f;
@@ -605,7 +605,7 @@ int main(int argc, char **argv){
         glUniformMatrix3fv(normalMatLoc, 1, false, glm::value_ptr(normalMat));
 
         for(int i = 0; i < LIGHT_CNT; i++){
-            
+
         }
 
         glActiveTexture(GL_TEXTURE0);
@@ -623,7 +623,7 @@ int main(int argc, char **argv){
         glUseProgram(lightProgID);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fbo.colorIDs.at(0));
+        glBindTexture(GL_TEXTURE_2D, gb.fbo.colorIDs.at(0));
         glUniform1i(screenTexLoc, 0);
 
         glViewport(0, 0, frameWidth, frameHeight);
