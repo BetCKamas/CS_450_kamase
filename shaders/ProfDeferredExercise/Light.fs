@@ -41,4 +41,6 @@ void main() {
 
     finalColor = finalColor / (finalColor + vec3(1.0));
     out_color = vec4(finalColor, 1.0);
+    //vec3 color = albedo*vec3(lights[0].color);
+    //out_color = vec4(color, 1);
 }

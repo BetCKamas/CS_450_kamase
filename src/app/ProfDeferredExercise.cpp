@@ -56,6 +56,7 @@ struct GBuffer {
 
     void startGeometry() {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo.ID);
+        //cout << "fbo.ID: " << fbo.ID << endl;
     };
 
     void endGeometry() {
@@ -67,6 +68,8 @@ struct GBuffer {
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, fbo.colorIDs.at(i));
             glUniform1i(locs.at(i), i);
+            //cout << "colorIDs: " << fbo.colorIDs.at(i) << endl;
+            //cout << "locs: " << locs.at(i) << endl;
         }
     };
 
@@ -153,7 +156,11 @@ void createGBuffer(GBuffer &gb, int width, int height, int lightProgID,
                                                 GL_UNSIGNED_BYTE,
                                                 GL_NEAREST, 2));
 
-    glDrawBuffers(3, gb.fbo.colorIDs.data());
+    // glDrawBuffers(3, gb.fbo.colorIDs.data());
+    unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, 
+                                    GL_COLOR_ATTACHMENT1, 
+                                    GL_COLOR_ATTACHMENT2 };
+    glDrawBuffers(3, attachments);
 
     for(int i = 0; i < gb.fbo.colorIDs.size(); i++) {
         gb.locs.push_back(
@@ -345,7 +352,7 @@ void makeCylinder(Mesh &m, float length, float radius, int faceCnt) {
         vleft.position = left;
         vright.position = right;
         vleft.color = glm::vec4(1,0,0,1);
-        vright.color = glm::vec4(0,1,0,1);
+        vright.color = glm::vec4(1,1,0,1);
 
         vleft.texcoord = glm::vec2(0.0f, 2.0f*((float)i)/faceCnt);
         vright.texcoord = glm::vec2(2.0f, 2.0f*((float)i)/faceCnt);
@@ -419,32 +426,18 @@ unsigned int loadAndCreateTexture(string filename) {
 }
 
 GLuint loadAndCreateShaderProgram(string vertFile, string fragFile) {
-    
-    string vertCode = readFileToString(vertFile);
-	string fragCode = readFileToString(fragFile);
-    cout << vertCode << endl;
-    cout << fragCode << endl;
 
-    GLuint vertID = glCreateShader(GL_VERTEX_SHADER);
-    GLuint fragID = glCreateShader(GL_FRAGMENT_SHADER);
+    // Load vertex shader code and fragment shader code
+    string vertexCode = readFileToString(vertFile);
+    string fragCode = readFileToString(fragFile);
 
-    const char *vertPtr = vertCode.c_str();
-    const char *fragPtr = fragCode.c_str();
-    glShaderSource(vertID, 1, &vertPtr, NULL);
-    glShaderSource(fragID, 1, &fragPtr, NULL);
+    // Print out shader code, just to check
+    printShaderCode(vertexCode, fragCode);
 
-    glCompileShader(vertID);
-    glCompileShader(fragID);
+	// Create shader program from code
+	GLuint programID = initShaderProgramFromSource(vertexCode, fragCode);
 
-    GLuint geoProgID = glCreateProgram();
-    glAttachShader(geoProgID, vertID);
-    glAttachShader(geoProgID, fragID);
-    glLinkProgram(geoProgID);
-
-    glDeleteShader(vertID);
-    glDeleteShader(fragID);
-
-    return geoProgID;
+    return programID;
 }
 
 int main(int argc, char **argv) {
@@ -541,13 +534,15 @@ int main(int argc, char **argv) {
     cout << "normalMatLoc: " << normalMatLoc << endl;
 
     float lightAngleInc = glm::radians(360.0f / LIGHT_CNT);
-    float radius = 0.8f;
+    float radius = 4.0f; //0.8f;
 
     for(int i = 0; i < LIGHT_CNT; i++) {
         lights[i].pos = glm::vec4(radius * sin(lightAngleInc*i),
-                                    0.1f,
+                                    0.1f, //3.0f, //0.1f,
                                     radius * cos(lightAngleInc*i),
                                     1.0f);
+        cout << "light " << std::to_string(i) 
+                << ": " << glm::to_string(lights[i].pos) << endl;
         string pos_str = "lights[" + to_string(i) + "].pos";
         string color_str = "lights[" + to_string(i) + "].color";
         lights[i].posLoc = glGetUniformLocation(lightProgID, pos_str.c_str());
@@ -582,7 +577,7 @@ int main(int argc, char **argv) {
     };
     */
 
-   float quadScale = 0.75f; //1.0f; //0.3f;
+   float quadScale = 1.0f; //0.75f; //1.0f; //0.3f;
 
     //vector<Vertex> vertOnly;
     Mesh quad;
@@ -640,8 +635,8 @@ int main(int argc, char **argv) {
 
     while(!glfwWindowShouldClose(window)) {
 
-        // FIRST PASS /////////////////////////////////////////////////
-        //glBindFramebuffer(GL_FRAMEBUFFER, fbo.ID);
+        // GEOMETRY PASS /////////////////////////////////////////////////
+        gb.startGeometry();
 
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
         float aspect = 1.0f;
@@ -651,13 +646,13 @@ int main(int argc, char **argv) {
         float fov = glm::radians(90.0f);
 
         glViewport(0,0,frameWidth,frameHeight);
-        glClearColor(1.0, 1.0, 0.0, 1.0);
+        glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(geoProgID);
 
         glUniformMatrix4fv(modelMatLoc, 1, false, glm::value_ptr(modelMat));
 
-        viewMat = glm::lookAt(glm::vec3(4,4,4), glm::vec3(0,0,0), glm::vec3(0,1,0));
+        viewMat = glm::lookAt(glm::vec3(0,7,7), glm::vec3(0,0,0), glm::vec3(0,1,0));
         glUniformMatrix4fv(viewMatLoc, 1, false, glm::value_ptr(viewMat));
 
         projMat = glm::perspective(fov, aspect, 0.1f, 1000.0f);
@@ -665,12 +660,6 @@ int main(int argc, char **argv) {
 
         glm::mat3 normalMat = glm::transpose(glm::inverse(glm::mat3(viewMat*modelMat)));
         glUniformMatrix3fv(normalMatLoc, 1, false, glm::value_ptr(normalMat));
-
-        for(int i = 0; i < LIGHT_CNT; i++) {
-            glm::vec4 lightPos = viewMat*lights[i].pos;
-            glUniform4fv(lights[i].posLoc, 1, glm::value_ptr(lightPos));
-            glUniform4fv(lights[i].colorLoc, 1, glm::value_ptr(lights[i].color));
-        }
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffTexID);
@@ -682,21 +671,25 @@ int main(int argc, char **argv) {
 
         drawMesh(mainGL);
 
-        // SECOND PASS /////////////////////////////////////////////
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        gb.endGeometry();
 
+        // LIGHTING PASS /////////////////////////////////////////////
         glUseProgram(lightProgID);
-
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_2D, fbo.colorIDs.at(0));
-        //glUniform1i(screenTexLoc, 0);
+        gb.startLighting();       
 
         glViewport(0,0,frameWidth,frameHeight);
         glClearColor(0.0, 0.0, 1.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        for(int i = 0; i < LIGHT_CNT; i++) {
+            glm::vec4 lightPos = viewMat*lights[i].pos;
+            glUniform4fv(lights[i].posLoc, 1, glm::value_ptr(lightPos));
+            glUniform4fv(lights[i].colorLoc, 1, glm::value_ptr(lights[i].color));
+        }
 
         drawMesh(quadGL);
-        //drawMesh(mainGL);
+        
+        gb.endLighting();
 
         glUseProgram(0);
 
