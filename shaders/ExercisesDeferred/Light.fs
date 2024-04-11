@@ -1,4 +1,4 @@
-#version 430 core
+#version 410 core
 // 410 for mac
 
 layout(location=0) out vec4 out_color;
@@ -41,4 +41,5 @@ void main() {
     finalColor = finalColor / (finalColor + vec3(1,1,1));
 
     out_color = vec4(finalColor, 1.0);
+   //out_color = vec4(N, 1.0);
 }

@@ -142,7 +142,8 @@ void createGBuffer(GBuffer &gb, int width, int height, int lightProgID, string *
     }
     gb.fbo.colorIDs.push_back(createColorAttachment(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, GL_NEAREST, 2));
     
-    glDrawBuffers(3, gb.fbo.colorIDs.data());
+    unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(3, attachments);
 
     for(int i = 0; i < gb.fbo.colorIDs.size(); i++){
         gb.locs.push_back(glGetUniformLocation(lightProgID, uniformNames[i].c_str()));
@@ -577,7 +578,7 @@ int main(int argc, char **argv){
 
     while(!glfwWindowShouldClose(window)){
 
-        glBindFramebuffer(GL_FRAMEBUFFER, gb.fbo.ID);
+        gb.startGeometry();
 
         glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
         float aspect = 1.0f;
@@ -589,13 +590,13 @@ int main(int argc, char **argv){
 
 
         glViewport(0, 0, frameWidth, frameHeight);
+        glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-       
         glUseProgram(geoProgID);
 
         glUniformMatrix4fv(modelMatLoc, 1, false, glm::value_ptr(modelMat));
 
-        viewMat = glm::lookAt(glm::vec3(4,4,4), glm::vec3(0,0,0), glm::vec3(0,1,0));
+        viewMat = glm::lookAt(glm::vec3(0,7,7), glm::vec3(0,0,0), glm::vec3(0,1,0));
         glUniformMatrix4fv(viewMatLoc, 1, false, glm::value_ptr(viewMat));
 
         projMat = glm::perspective(fov, aspect, 0.1f, 1000.0f);
@@ -605,8 +606,15 @@ int main(int argc, char **argv){
         glUniformMatrix3fv(normalMatLoc, 1, false, glm::value_ptr(normalMat));
 
         for(int i = 0; i < LIGHT_CNT; i++){
-
+            glm::vec4 lightPos = viewMat*lights[i].pos;
+            glUniform4fv(lights[i].posLoc, 1, glm::value_ptr(lightPos));
+            glUniform4fv(lights[i].colorLoc, 1, glm::value_ptr(lights[i].color));
         }
+
+        //glViewport(0, 0, frameWidth, frameHeight);
+        //glClearColor(1.0, 1.0, 0.0, 1.0);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //glUseProgram(geoProgID);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffTexID);
@@ -617,19 +625,17 @@ int main(int argc, char **argv){
         glUniform1i(normalTexLoc, 1);
 
         drawMesh(mainGL);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        gb.endGeometry();
 
         glUseProgram(lightProgID);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gb.fbo.colorIDs.at(0));
-        glUniform1i(screenTexLoc, 0);
+        gb.startLighting();
 
         glViewport(0, 0, frameWidth, frameHeight);
+        glClearColor(0.0, 0.0, 1.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
        
         drawMesh(quadGL);
+        gb.endLighting();
         glUseProgram(0);
         
         glfwSwapBuffers(window);
