@@ -130,4 +130,9 @@ target_link_libraries(ProfDeferredExercise ${ALL_LIBRARIES})
 install(TARGETS ProfDeferredExercise RUNTIME DESTINATION bin/ProfDeferredExercise)
 install(DIRECTORY shaders/ProfDeferredExercise DESTINATION bin/ProfDeferredExercise/shaders)
 
+# Assign06
+add_executable(Assign06 ${GENERAL_SOURCES} "./src/app/Assign06.cpp")
+target_link_libraries(Assign06 ${ALL_LIBRARIES})
+install(TARGETS Assign06 RUNTIME DESTINATION bin/Assign06)
+install(DIRECTORY shaders/Assign06 DESTINATION bin/Assign06/shaders)
 
