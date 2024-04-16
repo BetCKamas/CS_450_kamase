@@ -307,7 +307,7 @@ int main(int argc, char **argv) {
     if(DEBUG_MODE) checkAndSetupOpenGLDebugging();
 
     glfwSetCursorPosCallback(window, mouse_position_callback);
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
     // Set the background color to a shade of purple

@@ -34,10 +34,12 @@ void main()
 	float diffuseCoef = max(0, dot(N,L));
 	vec3  diffColor = vec3(diffuseCoef * vertexColor * light.color);
 
-	vec3 I = vec3(vertexColor);
+	vec3 kd = vec3(vertexColor);
+	vec3 I = vec3(light.color);
+	vec3 ks = vec3(1.0,1.0,1.0);
 
-	vec3 specularCoef = vec3(1.0); // assuming white
-	vec3 specColor = diffuseCoef*I*(max(0, dot(N,L))) + specularCoef*I*(max(0, dot(N,L))*shinyPower);
+	float specularCoef = pow(max(0,dot(N,H)), shininess); 
+	vec3 specColor = kd*I*(max(0, dot(N,L))) + ks*I*(max(0, dot(N,L))*shinyPower);
 	
 
 	out_color = vec4(diffColor + specColor, 1.0);
