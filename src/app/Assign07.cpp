@@ -3,6 +3,7 @@
 #include <sstream>
 #include <thread>
 #include <vector>
+#include <algorithm>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <assimp/Importer.hpp>
@@ -33,6 +34,9 @@ glm::vec3 eye = glm::vec3(0,0,1);
 glm::vec3 lookAtP = glm::vec3(0,0,0);
 glm::vec2 mousePos;
 PointLight light;
+float metallic = 0.0f;
+float roughness = 0.1f;
+const float changeValue = 0.1f;
 
 
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
@@ -78,8 +82,20 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
             light.color = glm::vec4(0,1,0,1); // green
 		} else if (key == GLFW_KEY_4){
             light.color = glm::vec4(0,0,1,1); // blue
-		}
-        //cout << "rotAngle: " << rotAngle << endl;
+		} else if (key == GLFW_KEY_V){
+            metallic = max(0.0f, (metallic-changeValue));
+            //cout << metallic << endl;
+        } else if (key == GLFW_KEY_B){
+            metallic = min(1.0f, (metallic+changeValue));
+            //cout << metallic << endl;
+        } else if (key == GLFW_KEY_N){
+            roughness = max(0.1f, (roughness-changeValue));
+            //cout << roughness << endl;
+        } else if (key == GLFW_KEY_M){
+            roughness = min(0.7f, (roughness+changeValue));
+            //cout << roughness << endl;
+        }
+        
     }
 }
 
@@ -340,13 +356,14 @@ int main(int argc, char **argv) {
     GLint lightPosLoc = glGetUniformLocation(programID, "light.pos");
     GLint lightColorLoc = glGetUniformLocation(programID, "light.color");
 
+    GLint roughnessLoc = glGetUniformLocation(programID, "roughness");
+    GLint metallicLoc = glGetUniformLocation(programID, "metallic");
+
     GLint modelMatLoc = glGetUniformLocation(programID, "modelMat");
     GLint viewMatLoc = glGetUniformLocation(programID, "viewMat");
     GLint projMatLoc = glGetUniformLocation(programID, "projMat");
     GLint normMatLoc = glGetUniformLocation(programID, "normMat");
     
-
-
     vector<MeshGL> meshes;
 
     // Create OpenGL mesh (VAO) from data
@@ -374,12 +391,17 @@ int main(int argc, char **argv) {
         // Use shader program
         glUseProgram(programID);
 
+        glUniform1f(metallicLoc, metallic);
+        glUniform1f(roughnessLoc, roughness);
+
+
         glm::mat4 viewMat = glm::lookAt(eye, lookAtP, glm::vec3(0,1,0));
         glUniformMatrix4fv(viewMatLoc, 1, false, glm::value_ptr(viewMat));
 
         glm::vec4 lightPos = viewMat*light.pos;
         glUniform4fv(lightPosLoc, 1, glm::value_ptr(lightPos));
         glUniform4fv(lightColorLoc, 1, glm::value_ptr(light.color));
+
 
         if(fwidth > 0 && fheight > 0){
             aspectRatio = float(fwidth) / float(fheight);
