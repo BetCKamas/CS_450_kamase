@@ -21,7 +21,6 @@ const float PI = 3.14159265359;
 vec3 getFresnelAtAngleZero(vec3 albedo, float metallic)
 {
 
-
 	vec3 F0 = vec3(0.04, 0.04, 0.04);
 	F0 = mix(F0, albedo, metallic);
 
@@ -32,7 +31,8 @@ vec3 getFresnel(vec3 F0, vec3 L, vec3 H)
 {
 	float cosAngle = max(0, dot(L,H));
 	
-	vec3 FTheta = F0 + ((vec3(1.0) - F0)*(pow((1.0 - max(0.0, cos(cosAngle))), 5)));
+	//vec3 FTheta = F0 + ((vec3(1.0) - F0)*(pow((1.0 - max(0.0, cos(cosAngle))), 5)));
+	vec3 FTheta = F0 + ((vec3(1.0) - F0)*(pow((1.0 - max(0.0, cosAngle)), 5)));
 
 	return FTheta;
 }
@@ -43,7 +43,9 @@ float getNDF(vec3 H, vec3 N, float roughness)
 	float alphaSquared = pow(alpha, 2);
 	float dotNHSquared = pow(dot(N,H), 2);
 
-	float NDF = alphaSquared / (PI*pow((dotNHSquared*((alphaSquared - 1.0)+1.0)), 2));
+	float denom = pow(((dotNHSquared * (alphaSquared - 1.0)) + 1.0), 2);
+
+	float NDF = alphaSquared / (PI * denom);
 
 	return NDF;
 }
@@ -51,7 +53,7 @@ float getNDF(vec3 H, vec3 N, float roughness)
 float getSchlickGeo(vec3 B, vec3 N, float roughness)
 {
 	float k = pow((roughness+1.0), 2) / 8.0;
-	float sGeo = dot(N,B) / (dot(N,B)*(1.0-k)+k);
+	float sGeo = dot(N,B) / ((dot(N,B) * (1.0-k)) + k);
 	return sGeo;
 }
 
