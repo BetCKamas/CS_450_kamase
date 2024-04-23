@@ -19,6 +19,8 @@ uniform sampler2D normalTexture;
 in vec2 interUV;
 in vec3 interTangent;
 
+uniform float tex_u_offset;
+
 void main() {
     vec3 N = normalize(interNormal);
     vec3 T = normalize(interTangent);
@@ -34,7 +36,9 @@ void main() {
 
     N = normalize(toView*texN);
 
-    vec4 texColor = texture(diffuseTexture, interUV);
+    vec2 uv = interUV;
+    uv.x += tex_u_offset;
+    vec4 texColor = texture(diffuseTexture, uv);
 
     vec3 lightPos = vec3(light.pos);
     vec3 L = lightPos - interPos;

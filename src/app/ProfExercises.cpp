@@ -12,16 +12,25 @@
 #include "glm/gtx/string_cast.hpp"
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/gtc/quaternion.hpp"
+#include "glm/gtx/quaternion.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 using namespace std;
 
-glm::mat4 modelMat(1.0);
+glm::quat startRot = glm::quat(glm::radians(glm::vec3(70,32,23)));
+glm::quat endRot = glm::quat(glm::radians(glm::vec3(30,12,117)));
+float t = 0.0f;
+glm::quat currentRot = startRot;
+
+glm::mat4 modelMat = glm::toMat4(currentRot);
 string transformString = "v";
 glm::mat4 viewMat(1.0);
 glm::mat4 projMat(1.0);
 glm::vec2 lastMousePos(0,0);
 bool leftMouseDown = false;
+
+float tex_u_offset = 0.0f;
 
 struct PointLight {
     glm::vec4 pos = glm::vec4(0,0,0,1);
@@ -62,6 +71,15 @@ static void mouse_motion_callback(GLFWwindow *window, double xpos, double ypos) 
     cout << "MOUSE DIFF: " << glm::to_string(mouseDiff) << endl;
     
     float angle = 2.0f*mouseDiff.x;
+    cout << "Angle: " << angle << endl;
+
+    t += angle;
+    t = max(0.0f, min(1.0f, t));
+    currentRot = glm::mix(startRot, endRot, t);
+    glm::mat4 R = glm::toMat4(currentRot);
+    modelMat = R;
+
+    /*
     glm::mat4 R;
     if(!leftMouseDown) {
         R = glm::rotate(angle, glm::vec3(0,1,0));
@@ -70,6 +88,7 @@ static void mouse_motion_callback(GLFWwindow *window, double xpos, double ypos) 
         R = glm::rotate(angle, glm::vec3(1,0,0));
     }
     modelMat = R*modelMat;   
+    */
     
     lastMousePos = glm::vec2(xpos, ypos);
 }
@@ -144,6 +163,12 @@ static void key_callback(GLFWwindow *window,
         else if(key == GLFW_KEY_D) {
             modelMat = glm::translate(glm::vec3(0.1,0,0))*modelMat;
             transformString = "Tx(+0.1)*" + transformString;
+        }
+        else if(key == GLFW_KEY_LEFT) {
+            tex_u_offset -= 0.05;
+        }
+        else if(key == GLFW_KEY_RIGHT) {
+            tex_u_offset += 0.05;
         }
 
         printRM("Model", modelMat);
@@ -390,6 +415,8 @@ int main(int argc, char **argv) {
     GLint lightPosLoc = glGetUniformLocation(progID, "light.pos");
     GLint lightColorLoc = glGetUniformLocation(progID, "light.color");
 
+    GLint texOffLoc = glGetUniformLocation(progID, "tex_u_offset");
+
     unsigned int diffTexID = loadAndCreateTexture("test.png");
     unsigned int normTexID = loadAndCreateTexture("normal.png");
 
@@ -529,6 +556,8 @@ int main(int argc, char **argv) {
 
         glUniform1i(diffuseTexLoc, 0);
         glUniform1i(normalTexLoc, 1);
+
+        glUniform1f(texOffLoc, tex_u_offset);
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, indexCnt, 

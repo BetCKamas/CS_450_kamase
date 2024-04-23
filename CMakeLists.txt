@@ -36,6 +36,44 @@ file(GLOB GENERAL_SOURCES
 )
 
 #####################################
+# SPIR-V COMPILATION
+#####################################
+
+# Adapted from: https://gist.github.com/evilactually/a0d191701cb48f157b05be7f74d79396
+macro(COMPILE_VULKAN_SHADERS target)
+    file(GLOB SHADER_SOURCES
+        "vulkanshaders/${target}/*.vert"
+        "vulkanshaders/${target}/*.frag"
+    )
+
+    foreach(GLSL ${SHADER_SOURCES})
+        message(${GLSL})
+        cmake_path(GET GLSL FILENAME filename)        
+        message(${filename}) 
+        set(SPIRV "${PROJECT_BINARY_DIR}/compiledshaders/${target}/${filename}.spv")
+        message(${SPIRV})
+        message("${PROJECT_BINARY_DIR}/compiledshaders/${target}/")
+        	  
+        add_custom_command(
+            OUTPUT ${SPIRV}
+            COMMAND cd
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${PROJECT_BINARY_DIR}/compiledshaders/${target}/"
+            COMMAND Vulkan::glslc ${GLSL} -o ${SPIRV}
+            DEPENDS ${GLSL})
+        list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+    endforeach(GLSL)
+
+    add_custom_target(
+	    Shaders_${target}
+	    DEPENDS ${SPIRV_BINARY_FILES}
+	)
+
+	add_dependencies(${target} Shaders_${target})
+
+endmacro()
+
+
+#####################################
 # Create executables 
 # and install targets
 #####################################
@@ -130,9 +168,22 @@ target_link_libraries(ProfDeferredExercise ${ALL_LIBRARIES})
 install(TARGETS ProfDeferredExercise RUNTIME DESTINATION bin/ProfDeferredExercise)
 install(DIRECTORY shaders/ProfDeferredExercise DESTINATION bin/ProfDeferredExercise/shaders)
 
+# BasicVulkanHpp
+add_executable(BasicVulkanHpp ${GENERAL_SOURCES} "./src/app/BasicVulkanHpp.cpp")
+target_link_libraries(BasicVulkanHpp ${ALL_LIBRARIES})
+install(TARGETS BasicVulkanHpp RUNTIME DESTINATION bin/BasicVulkanHpp)
+COMPILE_VULKAN_SHADERS(BasicVulkanHpp)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/compiledshaders/BasicVulkanHpp DESTINATION bin/BasicVulkanHpp/build/compiledshaders)
+
 # Assign06
 add_executable(Assign06 ${GENERAL_SOURCES} "./src/app/Assign06.cpp")
 target_link_libraries(Assign06 ${ALL_LIBRARIES})
 install(TARGETS Assign06 RUNTIME DESTINATION bin/Assign06)
 install(DIRECTORY shaders/Assign06 DESTINATION bin/Assign06/shaders)
 
+
+# Assign07
+add_executable(Assign07 ${GENERAL_SOURCES} "./src/app/Assign07.cpp")
+target_link_libraries(Assign07 ${ALL_LIBRARIES})
+install(TARGETS Assign07 RUNTIME DESTINATION bin/Assign07)
+install(DIRECTORY shaders/Assign07 DESTINATION bin/Assign07/shaders)
