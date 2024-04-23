@@ -156,6 +156,21 @@ target_link_libraries(Assign05 ${ALL_LIBRARIES})
 install(TARGETS Assign05 RUNTIME DESTINATION bin/Assign05)
 install(DIRECTORY shaders/Assign05 DESTINATION bin/Assign05/shaders)
 
+
+# Assign06
+add_executable(Assign06 ${GENERAL_SOURCES} "./src/app/Assign06.cpp")
+target_link_libraries(Assign06 ${ALL_LIBRARIES})
+install(TARGETS Assign06 RUNTIME DESTINATION bin/Assign06)
+install(DIRECTORY shaders/Assign06 DESTINATION bin/Assign06/shaders)
+
+
+# Assign07
+add_executable(Assign07 ${GENERAL_SOURCES} "./src/app/Assign07.cpp")
+target_link_libraries(Assign07 ${ALL_LIBRARIES})
+install(TARGETS Assign07 RUNTIME DESTINATION bin/Assign07)
+install(DIRECTORY shaders/Assign07 DESTINATION bin/Assign07/shaders)
+
+
 # ExercisesDeferred
 add_executable(ExercisesDeferred ${GENERAL_SOURCES} "./src/app/ExercisesDeferred.cpp")
 target_link_libraries(ExercisesDeferred ${ALL_LIBRARIES})
@@ -174,16 +189,3 @@ target_link_libraries(BasicVulkanHpp ${ALL_LIBRARIES})
 install(TARGETS BasicVulkanHpp RUNTIME DESTINATION bin/BasicVulkanHpp)
 COMPILE_VULKAN_SHADERS(BasicVulkanHpp)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/compiledshaders/BasicVulkanHpp DESTINATION bin/BasicVulkanHpp/build/compiledshaders)
-
-# Assign06
-add_executable(Assign06 ${GENERAL_SOURCES} "./src/app/Assign06.cpp")
-target_link_libraries(Assign06 ${ALL_LIBRARIES})
-install(TARGETS Assign06 RUNTIME DESTINATION bin/Assign06)
-install(DIRECTORY shaders/Assign06 DESTINATION bin/Assign06/shaders)
-
-
-# Assign07
-add_executable(Assign07 ${GENERAL_SOURCES} "./src/app/Assign07.cpp")
-target_link_libraries(Assign07 ${ALL_LIBRARIES})
-install(TARGETS Assign07 RUNTIME DESTINATION bin/Assign07)
-install(DIRECTORY shaders/Assign07 DESTINATION bin/Assign07/shaders)
