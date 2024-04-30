@@ -39,8 +39,8 @@ void main()
 	vec3 ks = vec3(1.0,1.0,1.0);
 
 	float specularCoef = pow(max(0,dot(N,H)), shininess); 
-	vec3 specColor = kd*I*(max(0, dot(N,L))) + ks*I*(max(0, dot(N,L))*shinyPower);
+	vec3 finalColor = kd*I*(max(0, dot(N,L))) + ks*I*(max(0, dot(N,L))*shinyPower);
 	
 
-	out_color = vec4(diffColor + specColor, 1.0);
+	out_color = vec4(finalColor, 1.0);
 }
